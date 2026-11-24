@@ -1,0 +1,19 @@
+# Murmur with its D-Bus interface on a private bus, for the integration tests.
+#
+# The bus listens on a unix socket (for Murmur) and on TCP port 4300 with
+# ANONYMOUS auth (for the tests, which run outside the container). Murmur's
+# control port is 64738. Build with --build-arg DEBIAN=bookworm for Murmur
+# 1.3.4, or the default trixie for 1.5.
+ARG DEBIAN=trixie
+FROM docker.io/library/debian:${DEBIAN}-slim
+
+RUN apt-get update \
+ && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      mumble-server dbus-daemon ca-certificates \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY bus.conf murmur.ini entrypoint.sh /etc/murmur-test/
+RUN chmod +x /etc/murmur-test/entrypoint.sh
+
+EXPOSE 4300 64738
+ENTRYPOINT ["/etc/murmur-test/entrypoint.sh"]
